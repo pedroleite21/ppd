@@ -18,27 +18,42 @@ void main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &proc_n);
 
-	int vector[SIZE] = {0, 1, 2, 3, 4};
+	int vector[SIZE][1];
 	int buffer;
+
+	double t1, t2;
 
 	for(int i=0; i<SIZE; i++) {
 	
 		if(my_rank == 0) {
-			buffer = vector[i];
+			t1 = MPI_Wtime();
+	
+			buffer = vector[i][i];
 	
 		} else {
 			// senao recebo	do anterior
 			MPI_Recv(&buffer, 1, MPI_INT, my_rank-1, tag, MPI_COMM_WORLD, &status);	
 		}
 
-		if(my_rank == (proc_n - 1)) {
+		buffer += 1;
+
+		if(my_rank == (proc_n - 1)) {	
+			MPI_Send(&buffer, 1, MPI_INT, 0, tag, MPI_COMM_WORLD);
+
 			printf("[%d] : %d\n", my_rank, buffer);
 		
 		} else {
 	
 			MPI_Send(&buffer, 1, MPI_INT, my_rank + 1, tag, MPI_COMM_WORLD);	
 		}
-	
+
+
+		if(my_rank == 0) {
+			MPI_Recv(&buffer, 1, MPI_INT, my_rank-1, tag, MPI_COMM_WORLD, &status);
+			t2 = MPI_Wtime();
+			printf("[BUFFER] : %d\n", buffer);
+			printf("[TEMPO] : %lf\n", t2-t1);	
+		}
 	}
 
 	MPI_Finalize();
